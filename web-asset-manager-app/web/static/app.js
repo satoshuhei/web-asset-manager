@@ -62,6 +62,28 @@ document.addEventListener("DOMContentLoaded", () => {
     let offsetX = 0;
     let offsetY = 0;
 
+    const applyCanvasSort = (sortKey) => {
+      const cards = Array.from(canvas.querySelectorAll(".config-card"))
+        .filter((card) => card.style.display !== "none");
+      const getValue = (card) => {
+        if (sortKey === "created_at") return card.dataset.createdAt || "";
+        if (sortKey === "updated_at") return card.dataset.updatedAt || "";
+        return card.dataset.configName || "";
+      };
+      cards.sort((a, b) => getValue(a).localeCompare(getValue(b), "ja"));
+      const originX = 24;
+      const originY = 24;
+      const cellWidth = 260;
+      const cellHeight = 220;
+      const cols = 4;
+      cards.forEach((card, index) => {
+        const col = index % cols;
+        const row = Math.floor(index / cols);
+        card.style.left = `${originX + col * cellWidth}px`;
+        card.style.top = `${originY + row * cellHeight}px`;
+      });
+    };
+
     canvas.addEventListener("pointerdown", (event) => {
       const handle = event.target.closest(".drag-handle");
       if (!handle) return;
@@ -98,5 +120,34 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify({ x, y }),
       });
     });
+
+    const canvasSort = document.getElementById("canvas-sort");
+    if (canvasSort) {
+      canvasSort.addEventListener("change", () => applyCanvasSort(canvasSort.value));
+      applyCanvasSort("name");
+    }
+  }
+
+  const tabButtons = document.querySelectorAll(".tab-button");
+  if (tabButtons.length) {
+    const setActiveTab = (tab) => {
+      tabButtons.forEach((btn) => btn.classList.toggle("active", btn.dataset.tab === tab));
+      document.querySelectorAll("[data-region]").forEach((el) => {
+        const region = el.dataset.region;
+        el.style.display = region === tab.toUpperCase() ? "" : "none";
+      });
+      const canvasSort = document.getElementById("canvas-sort");
+      if (canvasSort) {
+        const canvas = document.getElementById("config-canvas");
+        if (canvas) {
+          const event = new Event("change");
+          canvasSort.dispatchEvent(event);
+        }
+      }
+    };
+    tabButtons.forEach((btn) => {
+      btn.addEventListener("click", () => setActiveTab(btn.dataset.tab));
+    });
+    setActiveTab("jp");
   }
 });

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import sys
+from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
 from fastapi import FastAPI, Form, HTTPException, Request
@@ -21,7 +22,13 @@ def _ensure_src_path() -> None:
 _ensure_src_path()
 
 from wam.db import init_db  # noqa: E402
-from wam.repositories import ConfigRepository, DeviceRepository, LicenseRepository, PositionRepository  # noqa: E402
+from wam.repositories import (  # noqa: E402
+    AuditRepository,
+    ConfigRepository,
+    DeviceRepository,
+    LicenseRepository,
+    PositionRepository,
+)
 from wam.services import AssetService, ConfigService  # noqa: E402
 
 
@@ -51,6 +58,7 @@ def create_app(db_path: Optional[str] = None) -> FastAPI:
     license_repo = LicenseRepository(conn)
     config_repo = ConfigRepository(conn)
     position_repo = PositionRepository(conn)
+    audit_repo = AuditRepository(conn)
 
     asset_service = AssetService(device_repo, license_repo)
     config_service = ConfigService(config_repo)
@@ -325,6 +333,12 @@ def create_app(db_path: Optional[str] = None) -> FastAPI:
         available_licenses = [license_item for license_item in licenses if license_item.license_id not in assigned_license_ids]
 
         positions = position_repo.load_positions()
+        grid_cols = 4
+        cell_width = 260
+        cell_height = 220
+        origin_x = 24
+        origin_y = 24
+        occupied: set[tuple[int, int]] = set()
         config_cards: List[Dict[str, object]] = []
         for index, config in enumerate(configs):
             config_devices = config_service.list_config_devices(config.config_id)
@@ -334,9 +348,22 @@ def create_app(db_path: Optional[str] = None) -> FastAPI:
                 x, y, hidden = pos
                 if hidden:
                     continue
+                col = max(0, int(round((x - origin_x) / cell_width)))
+                row = max(0, int(round((y - origin_y) / cell_height)))
             else:
-                x = 40 + (index % 3) * 340
-                y = 40 + (index // 3) * 260
+                col = index % grid_cols
+                row = index // grid_cols
+
+            while (col, row) in occupied:
+                col += 1
+                if col >= grid_cols:
+                    col = 0
+                    row += 1
+
+            occupied.add((col, row))
+            x = origin_x + col * cell_width
+            y = origin_y + row * cell_height
+            region = "JP" if index < 4 else "US"
             config_cards.append(
                 {
                     "config": config,
@@ -344,6 +371,7 @@ def create_app(db_path: Optional[str] = None) -> FastAPI:
                     "licenses": config_licenses,
                     "x": x,
                     "y": y,
+                    "region": region,
                 }
             )
 
@@ -366,6 +394,7 @@ def create_app(db_path: Optional[str] = None) -> FastAPI:
         config = config_repo.get_by_id(config_id)
         config_devices = config_service.list_config_devices(config_id)
         config_licenses = config_service.list_config_licenses(config_id)
+        audit_logs = audit_repo.list_by_config(config_id, limit=200)
         return templates.TemplateResponse(
             request,
             "config_detail.html",
@@ -374,6 +403,7 @@ def create_app(db_path: Optional[str] = None) -> FastAPI:
                 "config": config,
                 "devices": config_devices,
                 "licenses": config_licenses,
+                "audit_logs": audit_logs,
             },
         )
 
@@ -382,7 +412,14 @@ def create_app(db_path: Optional[str] = None) -> FastAPI:
         name: str = Form(...),
         note: str = Form(""),
     ) -> RedirectResponse:
-        config_service.create_config(name=name, note=note)
+        config = config_service.create_config(name=name, note=note)
+        audit_repo.append(
+            config_id=config.config_id,
+            action="config.create",
+            actor="system",
+            details={"name": config.name, "note": config.note, "config_no": config.config_no},
+            created_at=datetime.now(timezone.utc).isoformat(),
+        )
         return RedirectResponse(url="/configurations", status_code=303)
 
     @app.get("/configurations/{config_id}/edit", response_class=HTMLResponse)
@@ -396,35 +433,102 @@ def create_app(db_path: Optional[str] = None) -> FastAPI:
 
     @app.post("/configurations/{config_id}/edit")
     def edit_config(config_id: int, name: str = Form(...), note: str = Form("")) -> RedirectResponse:
+        before = config_repo.get_by_id(config_id)
         config_service.update_config(config_id, name, note)
+        after = config_repo.get_by_id(config_id)
+        audit_repo.append(
+            config_id=config_id,
+            action="config.update",
+            actor="system",
+            details={
+                "before": {"name": before.name, "note": before.note},
+                "after": {"name": after.name, "note": after.note},
+            },
+            created_at=datetime.now(timezone.utc).isoformat(),
+        )
         return RedirectResponse(url="/configurations", status_code=303)
 
     @app.post("/configurations/{config_id}/delete")
     def delete_config(config_id: int) -> RedirectResponse:
+        before = config_repo.get_by_id(config_id)
+        config_devices = config_service.list_config_devices(config_id)
+        config_licenses = config_service.list_config_licenses(config_id)
+        audit_repo.append(
+            config_id=config_id,
+            action="config.delete",
+            actor="system",
+            details={
+                "name": before.name,
+                "note": before.note,
+                "devices": [item.asset_no for item in config_devices],
+                "licenses": [item.license_no for item in config_licenses],
+            },
+            created_at=datetime.now(timezone.utc).isoformat(),
+        )
         config_service.delete_config(config_id)
         return RedirectResponse(url="/configurations", status_code=303)
 
     @app.post("/api/configs/{config_id}/assign", response_class=JSONResponse)
     def assign_asset(config_id: int, payload: AssignPayload) -> JSONResponse:
         if payload.asset_type == "device":
+            device = device_repo.get_by_id(payload.asset_id)
             if payload.source_config_id and payload.source_config_id != config_id:
                 config_service.move_device(payload.source_config_id, config_id, payload.asset_id)
+                audit_repo.append(
+                    config_id=config_id,
+                    action="config.device.move",
+                    actor="system",
+                    details={
+                        "device_id": payload.asset_id,
+                        "asset_no": device.asset_no,
+                        "from_config_id": payload.source_config_id,
+                        "to_config_id": config_id,
+                    },
+                    created_at=datetime.now(timezone.utc).isoformat(),
+                )
             else:
                 owner = config_service.get_device_owner(payload.asset_id)
                 if owner is not None and owner != config_id:
                     raise HTTPException(status_code=409, detail="Device already assigned")
                 config_service.assign_device(config_id, payload.asset_id)
+                audit_repo.append(
+                    config_id=config_id,
+                    action="config.device.assign",
+                    actor="system",
+                    details={"device_id": payload.asset_id, "asset_no": device.asset_no},
+                    created_at=datetime.now(timezone.utc).isoformat(),
+                )
             return JSONResponse({"status": "ok"})
 
         if payload.asset_type == "license":
+            license_item = license_repo.get_by_id(payload.asset_id)
             if payload.source_config_id and payload.source_config_id != config_id:
                 config_service.unassign_license(payload.source_config_id, payload.asset_id)
                 config_service.assign_license(config_id, payload.asset_id)
+                audit_repo.append(
+                    config_id=config_id,
+                    action="config.license.move",
+                    actor="system",
+                    details={
+                        "license_id": payload.asset_id,
+                        "license_no": license_item.license_no,
+                        "from_config_id": payload.source_config_id,
+                        "to_config_id": config_id,
+                    },
+                    created_at=datetime.now(timezone.utc).isoformat(),
+                )
             else:
                 owner = config_service.get_license_owner(payload.asset_id)
                 if owner is not None and owner != config_id:
                     raise HTTPException(status_code=409, detail="License already assigned")
                 config_service.assign_license(config_id, payload.asset_id)
+                audit_repo.append(
+                    config_id=config_id,
+                    action="config.license.assign",
+                    actor="system",
+                    details={"license_id": payload.asset_id, "license_no": license_item.license_no},
+                    created_at=datetime.now(timezone.utc).isoformat(),
+                )
             return JSONResponse({"status": "ok"})
 
         raise HTTPException(status_code=400, detail="Unknown asset type")
@@ -432,6 +536,13 @@ def create_app(db_path: Optional[str] = None) -> FastAPI:
     @app.post("/api/configs/{config_id}/position", response_class=JSONResponse)
     def save_position(config_id: int, payload: PositionPayload) -> JSONResponse:
         position_repo.save_position(config_id, payload.x, payload.y)
+        audit_repo.append(
+            config_id=config_id,
+            action="config.position",
+            actor="system",
+            details={"x": payload.x, "y": payload.y},
+            created_at=datetime.now(timezone.utc).isoformat(),
+        )
         return JSONResponse({"status": "ok"})
 
     @app.get("/api/summary", response_class=JSONResponse)

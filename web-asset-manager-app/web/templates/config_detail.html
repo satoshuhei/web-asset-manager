@@ -35,7 +35,7 @@
       </thead>
       <tbody>
         {% for device in devices %}
-        <tr>
+        <tr class="device-row" data-device-type="{{ device.device_type }}">
           <td>{{ device.asset_no }}</td>
           <td>{{ device.display_name or "-" }}</td>
           <td>{{ device.device_type }}</td>
@@ -74,5 +74,37 @@
       </tbody>
     </table>
   </article>
+</section>
+
+<section class="card list-section">
+  <div class="card-header">
+    <h2>変更履歴</h2>
+  </div>
+  <div class="list-scroll">
+    <table class="list-table">
+      <thead>
+        <tr>
+          <th>日時</th>
+          <th>操作</th>
+          <th>実行者</th>
+          <th>詳細</th>
+          <th>ハッシュ</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in audit_logs %}
+        <tr>
+          <td>{{ log.created_at }}</td>
+          <td>{{ log.action }}</td>
+          <td>{{ log.actor }}</td>
+          <td><code class="mono">{{ log.details_json }}</code></td>
+          <td><code class="mono">{{ log.entry_hash[:12] }}</code></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="muted">履歴がありません</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </section>
 {% endblock %}

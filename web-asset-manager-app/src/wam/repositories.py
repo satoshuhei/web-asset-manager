@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import hashlib
+import json
 import sqlite3
+from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
 from wam.models import Configuration, Device, License
@@ -356,3 +359,89 @@ class PositionRepository:
             (config_id, x, y, config_id),
         )
         self._conn.commit()
+
+
+@dataclass(frozen=True)
+class AuditLog:
+    audit_id: int
+    config_id: int
+    action: str
+    actor: str
+    details_json: str
+    created_at: str
+    prev_hash: Optional[str]
+    entry_hash: str
+
+
+class AuditRepository:
+    def __init__(self, conn: sqlite3.Connection) -> None:
+        self._conn = conn
+
+    def _get_last_hash(self, config_id: int) -> Optional[str]:
+        cur = self._conn.execute(
+            """
+            SELECT entry_hash
+            FROM audit_logs
+            WHERE config_id = ?
+            ORDER BY audit_id DESC
+            LIMIT 1
+            """,
+            (config_id,),
+        )
+        row = cur.fetchone()
+        return str(row[0]) if row else None
+
+    @staticmethod
+    def _compute_hash(
+        created_at: str,
+        config_id: int,
+        action: str,
+        actor: str,
+        details_json: str,
+        prev_hash: Optional[str],
+    ) -> str:
+        payload = "|".join(
+            [
+                created_at,
+                str(config_id),
+                action,
+                actor,
+                details_json,
+                prev_hash or "",
+            ]
+        )
+        return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+    def append(
+        self,
+        *,
+        config_id: int,
+        action: str,
+        actor: str,
+        details: Dict[str, object],
+        created_at: str,
+    ) -> None:
+        details_json = json.dumps(details, ensure_ascii=False, sort_keys=True)
+        prev_hash = self._get_last_hash(config_id)
+        entry_hash = self._compute_hash(created_at, config_id, action, actor, details_json, prev_hash)
+        self._conn.execute(
+            """
+            INSERT INTO audit_logs (config_id, action, actor, details_json, created_at, prev_hash, entry_hash)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (config_id, action, actor, details_json, created_at, prev_hash, entry_hash),
+        )
+        self._conn.commit()
+
+    def list_by_config(self, config_id: int, limit: int = 100) -> List[AuditLog]:
+        cur = self._conn.execute(
+            """
+            SELECT audit_id, config_id, action, actor, details_json, created_at, prev_hash, entry_hash
+            FROM audit_logs
+            WHERE config_id = ?
+            ORDER BY audit_id DESC
+            LIMIT ?
+            """,
+            (config_id, limit),
+        )
+        return [AuditLog(*row) for row in cur.fetchall()]
