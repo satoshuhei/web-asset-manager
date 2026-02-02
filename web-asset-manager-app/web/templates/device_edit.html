@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% set title = "Device Edit" %}
+{% set active = "assets" %}
+
+{% block content %}
+<article class="card">
+  <h2>デバイス編集</h2>
+  <form class="form" method="post" action="/assets/devices/{{ device.device_id }}/edit">
+    <div class="form-row">
+      <label>資産No *</label>
+      <input name="asset_no" required value="{{ device.asset_no }}" />
+    </div>
+    <div class="form-row">
+      <label>表示名</label>
+      <input name="display_name" value="{{ device.display_name or '' }}" />
+    </div>
+    <div class="form-row">
+      <label>種別 *</label>
+      <input name="device_type" required value="{{ device.device_type }}" />
+    </div>
+    <div class="form-row">
+      <label>モデル *</label>
+      <input name="model" required value="{{ device.model }}" />
+    </div>
+    <div class="form-row">
+      <label>バージョン *</label>
+      <input name="version" required value="{{ device.version }}" />
+    </div>
+    <div class="form-row">
+      <label>状態 *</label>
+      <select name="state" required>
+        <option value="active" {% if device.state == 'active' %}selected{% endif %}>active</option>
+        <option value="inactive" {% if device.state == 'inactive' %}selected{% endif %}>inactive</option>
+        <option value="maintenance" {% if device.state == 'maintenance' %}selected{% endif %}>maintenance</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label>備考</label>
+      <textarea name="note" rows="3">{{ device.note }}</textarea>
+    </div>
+    <div class="form-actions">
+      <button class="primary" type="submit">保存</button>
+      <a class="button" href="/assets/devices">戻る</a>
+    </div>
+  </form>
+</article>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% set title = "Device New" %}
+{% set active = "assets" %}
+
+{% block content %}
+<article class="card">
+  <h2>デバイス登録</h2>
+  <form class="form" method="post" action="/assets/devices">
+    <div class="form-row">
+      <label>資産No *</label>
+      <input name="asset_no" required />
+    </div>
+    <div class="form-row">
+      <label>表示名</label>
+      <input name="display_name" />
+    </div>
+    <div class="form-row">
+      <label>種別 *</label>
+      <input name="device_type" required />
+    </div>
+    <div class="form-row">
+      <label>モデル *</label>
+      <input name="model" required />
+    </div>
+    <div class="form-row">
+      <label>バージョン *</label>
+      <input name="version" required />
+    </div>
+    <div class="form-row">
+      <label>状態 *</label>
+      <select name="state" required>
+        <option value="active">active</option>
+        <option value="inactive">inactive</option>
+        <option value="maintenance">maintenance</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label>備考</label>
+      <textarea name="note" rows="2"></textarea>
+    </div>
+    <div class="form-actions">
+      <button class="primary" type="submit">登録</button>
+      <a class="button" href="/assets/devices">戻る</a>
+    </div>
+  </form>
+</article>
+{% endblock %}

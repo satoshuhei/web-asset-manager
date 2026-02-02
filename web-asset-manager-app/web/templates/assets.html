@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% set title = "Assets" %}
+{% set active = "assets" %}
+
+{% block content %}
+<section class="grid two">
+  <article class="card">
+    <h2>デバイス</h2>
+    <p class="muted">登録件数: {{ device_count }}</p>
+    <a class="button" href="/assets/devices">デバイス一覧へ</a>
+  </article>
+  <article class="card">
+    <h2>ライセンス</h2>
+    <p class="muted">登録件数: {{ license_count }}</p>
+    <a class="button" href="/assets/licenses">ライセンス一覧へ</a>
+  </article>
+</section>
+{% endblock %}

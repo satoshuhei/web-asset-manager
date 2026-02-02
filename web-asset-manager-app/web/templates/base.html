@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ title or "Web Asset Manager" }}</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="title-area">
+      <h1>Web Asset Manager</h1>
+      <p>デスクトップ版の要件をWebで再構成したシステムです。</p>
+    </div>
+    <nav class="main-nav">
+      <a href="/assets" class="nav-link{% if active == 'assets' %} active{% endif %}">Assets</a>
+      <a href="/configurations" class="nav-link{% if active == 'configurations' %} active{% endif %}">Configurations</a>
+    </nav>
+  </header>
+  <main class="app-content">
+    {% block content %}{% endblock %}
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>
