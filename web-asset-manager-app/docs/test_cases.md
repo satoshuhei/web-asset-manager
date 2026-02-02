@@ -1,29 +1,38 @@
-# Test Cases (Web Asset Manager)
+# テストケース（Web Asset Manager）
 
-## Assets Screen
-- TC-001: Assets screen loads and links to device/license lists.
-- TC-002: Devices list loads before creation and shows the add button.
-- TC-003: Licenses list loads before creation and shows the add button.
-- TC-004: Create device with required fields succeeds and appears in the list.
-- TC-005: Create license with required fields succeeds and appears in the list.
-- TC-006: Search filter narrows the device list.
-- TC-007: Sort columns change the device list order.
-- TC-008: Edit device updates the list values.
-- TC-009: Delete device removes the item from the list.
-- TC-010: Sort columns change the license list order.
-- TC-011: Edit license updates the list values.
-- TC-012: Delete license removes the item from the list.
+## 1. 資産（Assets）
+- **TC-001**: Assets画面が表示できる（REQ-F-001）
+- **TC-002**: デバイス一覧が表示できる（REQ-F-002）
+- **TC-003**: ライセンス一覧が表示できる（REQ-F-003）
+- **TC-004**: デバイス新規登録が成功する（REQ-F-002）
+- **TC-005**: ライセンス新規登録が成功する（REQ-F-003）
+- **TC-006**: デバイス検索が動作する（REQ-F-004）
+- **TC-007**: デバイス並び替えが動作する（REQ-F-004）
+- **TC-008**: デバイス更新が反映される（REQ-F-002）
+- **TC-009**: デバイス削除が反映される（REQ-F-002）
+- **TC-010**: ライセンス並び替えが動作する（REQ-F-004）
+- **TC-011**: ライセンス更新が反映される（REQ-F-003）
+- **TC-012**: ライセンス削除が反映される（REQ-F-003）
 
-## Configurations Screen
-- TC-011: Configurations screen loads and shows configuration cards.
-- TC-012: Create configuration adds a new card and list row.
-- TC-013: Edit configuration updates the list row.
-- TC-014: Delete configuration removes the card and list row.
-- TC-014-1: Configuration detail page shows assigned devices and licenses.
-- TC-015: Drag device to a configuration assigns it.
-- TC-016: Drag license to a configuration assigns it.
-- TC-017: Drag configuration card updates stored position.
+## 2. 構成（Configurations）
+- **TC-020**: 構成一覧が表示できる（REQ-F-005）
+- **TC-021**: 構成作成が成功する（REQ-F-006）
+- **TC-022**: 構成更新が成功する（REQ-F-006）
+- **TC-023**: 構成削除が成功する（REQ-F-006）
+- **TC-024**: 構成詳細に割当デバイス/ライセンスが表示される（REQ-F-007）
+- **TC-025**: デバイスの割当が成功する（REQ-F-008）
+- **TC-026**: デバイスの移動が成功する（REQ-F-008）
+- **TC-027**: ライセンスの割当が成功する（REQ-F-009）
+- **TC-028**: 構成カードの位置保存が成功する（REQ-F-010）
 
-## System
-- TC-018: Sample data is seeded on first startup.
-- TC-019: Health endpoint returns ok.
+## 3. 監査ログ
+- **TC-030**: 構成作成時に監査ログが追加される（REQ-F-014）
+- **TC-031**: 構成更新時に監査ログが追加される（REQ-F-014）
+- **TC-032**: 構成削除時に監査ログが追加される（REQ-F-014）
+- **TC-033**: デバイス移動時に監査ログが追加される（REQ-F-014）
+- **TC-034**: 監査ログのハッシュチェーンが維持される（REQ-F-015）
+
+## 4. システム
+- **TC-040**: 初回起動でサンプルデータが投入される（REQ-F-012）
+- **TC-041**: /health がokを返す（REQ-F-013）
+- **TC-042**: /api/summary が件数を返す（REQ-F-013）
