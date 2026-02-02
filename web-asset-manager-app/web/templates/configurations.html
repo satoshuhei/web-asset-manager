@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% set title = "Configurations" %}
+{% set active = "configurations" %}
+
+{% block content %}
+<section class="config-layout">
+  <aside class="sidebar card">
+    <h2>構成を作成</h2>
+    <form class="form" method="post" action="/configurations">
+      <div class="form-row">
+        <label>名称 *</label>
+        <input name="name" required />
+      </div>
+      <div class="form-row">
+        <label>備考</label>
+        <textarea name="note" rows="2"></textarea>
+      </div>
+      <button class="primary" type="submit">追加</button>
+    </form>
+
+    <div class="divider"></div>
+
+    <h3>未割当デバイス</h3>
+    <ul class="asset-list">
+      {% for device in available_devices %}
+      <li class="draggable-asset" draggable="true" data-asset-type="device" data-asset-id="{{ device.device_id }}">
+        <strong>{{ device.asset_no }}</strong>
+        <span>{{ device.display_name or device.model }}</span>
+      </li>
+      {% else %}
+      <li class="muted">未割当はありません</li>
+      {% endfor %}
+    </ul>
+
+    <h3>未割当ライセンス</h3>
+    <ul class="asset-list">
+      {% for license in available_licenses %}
+      <li class="draggable-asset" draggable="true" data-asset-type="license" data-asset-id="{{ license.license_id }}">
+        <strong>{{ license.license_no }}</strong>
+        <span>{{ license.name }}</span>
+      </li>
+      {% else %}
+      <li class="muted">未割当はありません</li>
+      {% endfor %}
+    </ul>
+  </aside>
+
+  <div class="canvas" id="config-canvas">
+    {% for card in configs %}
+    <article class="config-card" data-config-id="{{ card.config.config_id }}" style="left: {{ card.x }}px; top: {{ card.y }}px;">
+      <header class="card-header drag-handle">
+        <div>
+          <h2><a href="/configurations/{{ card.config.config_id }}">{{ card.config.config_no }}</a></h2>
+          <p>{{ card.config.name }}</p>
+        </div>
+        <span class="pill">{{ card.devices | length }} Devices</span>
+      </header>
+      <div class="drop-zone" data-config-id="{{ card.config.config_id }}">
+        <h4>Devices</h4>
+        <ul class="asset-list">
+          {% for device in card.devices %}
+          <li class="draggable-asset" draggable="true" data-asset-type="device" data-asset-id="{{ device.device_id }}" data-source-config-id="{{ card.config.config_id }}">
+            <strong>{{ device.asset_no }}</strong>
+            <span>{{ device.display_name or device.model }}</span>
+          </li>
+          {% else %}
+          <li class="muted">未割当</li>
+          {% endfor %}
+        </ul>
+        <h4>Licenses</h4>
+        <ul class="asset-list">
+          {% for license in card.licenses %}
+          <li class="draggable-asset" draggable="true" data-asset-type="license" data-asset-id="{{ license.license_id }}" data-source-config-id="{{ card.config.config_id }}">
+            <strong>{{ license.license_no }}</strong>
+            <span>{{ license.name }}</span>
+          </li>
+          {% else %}
+          <li class="muted">未割当</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="card list-section">
+  <div class="card-header">
+    <h2>構成一覧</h2>
+  </div>
+  <form class="filter-bar" method="get" action="/configurations">
+    <input class="search" type="search" name="config_q" placeholder="検索" value="{{ config_q }}" />
+    <button class="primary" type="submit">適用</button>
+    <a class="button" href="/configurations">クリア</a>
+  </form>
+  <table class="list-table">
+    <thead>
+      <tr>
+        <th><a href="/configurations?config_q={{ config_q }}&config_sort=config_no&config_dir={{ 'asc' if config_sort != 'config_no' or config_dir == 'desc' else 'desc' }}">構成No</a></th>
+        <th><a href="/configurations?config_q={{ config_q }}&config_sort=name&config_dir={{ 'asc' if config_sort != 'name' or config_dir == 'desc' else 'desc' }}">名称</a></th>
+        <th><a href="/configurations?config_q={{ config_q }}&config_sort=created_at&config_dir={{ 'asc' if config_sort != 'created_at' or config_dir == 'desc' else 'desc' }}">作成日</a></th>
+        <th><a href="/configurations?config_q={{ config_q }}&config_sort=updated_at&config_dir={{ 'asc' if config_sort != 'updated_at' or config_dir == 'desc' else 'desc' }}">更新日</a></th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for card in configs %}
+      <tr>
+        <td><a href="/configurations/{{ card.config.config_id }}">{{ card.config.config_no }}</a></td>
+        <td>{{ card.config.name }}</td>
+        <td>{{ card.config.created_at }}</td>
+        <td>{{ card.config.updated_at }}</td>
+        <td class="actions">
+          <a class="button" href="/configurations/{{ card.config.config_id }}">詳細</a>
+          <a class="button" href="/configurations/{{ card.config.config_id }}/edit">編集</a>
+          <form method="post" action="/configurations/{{ card.config.config_id }}/delete" class="inline-form" onsubmit="return confirm('削除しますか？');">
+            <button class="danger" type="submit">削除</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

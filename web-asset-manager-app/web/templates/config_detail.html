@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% set title = "Configuration Detail" %}
+{% set active = "configurations" %}
+
+{% block content %}
+<section class="card">
+  <div class="card-header">
+    <h2>構成詳細</h2>
+    <div class="actions">
+      <a class="button" href="/configurations/{{ config.config_id }}/edit">編集</a>
+      <a class="button" href="/configurations">戻る</a>
+    </div>
+  </div>
+  <table class="detail-table">
+    <tr><th>構成No</th><td>{{ config.config_no }}</td></tr>
+    <tr><th>名称</th><td>{{ config.name }}</td></tr>
+    <tr><th>備考</th><td>{{ config.note }}</td></tr>
+    <tr><th>作成日</th><td>{{ config.created_at }}</td></tr>
+    <tr><th>更新日</th><td>{{ config.updated_at }}</td></tr>
+  </table>
+</section>
+
+<section class="grid two">
+  <article class="card">
+    <h3>割当デバイス</h3>
+    <table class="list-table">
+      <thead>
+        <tr>
+          <th>資産No</th>
+          <th>名称</th>
+          <th>種別</th>
+          <th>モデル</th>
+          <th>状態</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for device in devices %}
+        <tr>
+          <td>{{ device.asset_no }}</td>
+          <td>{{ device.display_name or "-" }}</td>
+          <td>{{ device.device_type }}</td>
+          <td>{{ device.model }}</td>
+          <td><span class="pill">{{ device.state }}</span></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="muted">割当なし</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </article>
+
+  <article class="card">
+    <h3>割当ライセンス</h3>
+    <table class="list-table">
+      <thead>
+        <tr>
+          <th>ライセンスNo</th>
+          <th>名称</th>
+          <th>キー</th>
+          <th>状態</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for license in licenses %}
+        <tr>
+          <td>{{ license.license_no }}</td>
+          <td>{{ license.name }}</td>
+          <td>{{ license.license_key }}</td>
+          <td><span class="pill">{{ license.state }}</span></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="muted">割当なし</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </article>
+</section>
+{% endblock %}

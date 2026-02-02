@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% set title = "License New" %}
+{% set active = "assets" %}
+
+{% block content %}
+<article class="card">
+  <h2>ライセンス登録</h2>
+  <form class="form" method="post" action="/assets/licenses">
+    <div class="form-row">
+      <label>ライセンスNo *</label>
+      <input name="license_no" required />
+    </div>
+    <div class="form-row">
+      <label>名称 *</label>
+      <input name="name" required />
+    </div>
+    <div class="form-row">
+      <label>キー *</label>
+      <input name="license_key" required />
+    </div>
+    <div class="form-row">
+      <label>状態 *</label>
+      <select name="state" required>
+        <option value="active">active</option>
+        <option value="inactive">inactive</option>
+        <option value="expired">expired</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label>備考</label>
+      <textarea name="note" rows="2"></textarea>
+    </div>
+    <div class="form-actions">
+      <button class="primary" type="submit">登録</button>
+      <a class="button" href="/assets/licenses">戻る</a>
+    </div>
+  </form>
+</article>
+{% endblock %}

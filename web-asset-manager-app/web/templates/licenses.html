@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% set title = "Licenses" %}
+{% set active = "assets" %}
+
+{% block content %}
+<section class="card list-section">
+  <div class="card-header">
+    <h2>ライセンス一覧</h2>
+    <a class="button" href="/assets/licenses/new">新規登録</a>
+  </div>
+  <form class="filter-bar" method="get" action="/assets/licenses">
+    <input class="search" type="search" name="license_q" placeholder="検索" value="{{ license_q }}" />
+    <button class="primary" type="submit">適用</button>
+    <a class="button" href="/assets/licenses">クリア</a>
+  </form>
+  <table class="list-table">
+    <thead>
+      <tr>
+        <th><a href="/assets/licenses?license_q={{ license_q }}&license_sort=license_no&license_dir={{ 'asc' if license_sort != 'license_no' or license_dir == 'desc' else 'desc' }}">ライセンスNo</a></th>
+        <th><a href="/assets/licenses?license_q={{ license_q }}&license_sort=name&license_dir={{ 'asc' if license_sort != 'name' or license_dir == 'desc' else 'desc' }}">名称</a></th>
+        <th><a href="/assets/licenses?license_q={{ license_q }}&license_sort=license_key&license_dir={{ 'asc' if license_sort != 'license_key' or license_dir == 'desc' else 'desc' }}">キー</a></th>
+        <th><a href="/assets/licenses?license_q={{ license_q }}&license_sort=state&license_dir={{ 'asc' if license_sort != 'state' or license_dir == 'desc' else 'desc' }}">状態</a></th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for license in licenses %}
+      <tr>
+        <td>{{ license.license_no }}</td>
+        <td>{{ license.name }}</td>
+        <td>{{ license.license_key }}</td>
+        <td><span class="pill">{{ license.state }}</span></td>
+        <td class="actions">
+          <a class="button" href="/assets/licenses/{{ license.license_id }}/edit">編集</a>
+          <form method="post" action="/assets/licenses/{{ license.license_id }}/delete" class="inline-form" onsubmit="return confirm('削除しますか？');">
+            <button class="danger" type="submit">削除</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

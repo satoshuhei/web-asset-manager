@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% set title = "Devices" %}
+{% set active = "assets" %}
+
+{% block content %}
+<section class="card list-section">
+  <div class="card-header">
+    <h2>デバイス一覧</h2>
+    <a class="button" href="/assets/devices/new">新規登録</a>
+  </div>
+  <form class="filter-bar" method="get" action="/assets/devices">
+    <input class="search" type="search" name="device_q" placeholder="検索" value="{{ device_q }}" />
+    <button class="primary" type="submit">適用</button>
+    <a class="button" href="/assets/devices">クリア</a>
+  </form>
+  <table class="list-table">
+    <thead>
+      <tr>
+        <th><a href="/assets/devices?device_q={{ device_q }}&device_sort=asset_no&device_dir={{ 'asc' if device_sort != 'asset_no' or device_dir == 'desc' else 'desc' }}">資産No</a></th>
+        <th><a href="/assets/devices?device_q={{ device_q }}&device_sort=display_name&device_dir={{ 'asc' if device_sort != 'display_name' or device_dir == 'desc' else 'desc' }}">名称</a></th>
+        <th><a href="/assets/devices?device_q={{ device_q }}&device_sort=device_type&device_dir={{ 'asc' if device_sort != 'device_type' or device_dir == 'desc' else 'desc' }}">種別</a></th>
+        <th><a href="/assets/devices?device_q={{ device_q }}&device_sort=model&device_dir={{ 'asc' if device_sort != 'model' or device_dir == 'desc' else 'desc' }}">モデル</a></th>
+        <th><a href="/assets/devices?device_q={{ device_q }}&device_sort=state&device_dir={{ 'asc' if device_sort != 'state' or device_dir == 'desc' else 'desc' }}">状態</a></th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for device in devices %}
+      <tr>
+        <td>{{ device.asset_no }}</td>
+        <td>{{ device.display_name or "-" }}</td>
+        <td>{{ device.device_type }}</td>
+        <td>{{ device.model }}</td>
+        <td><span class="pill">{{ device.state }}</span></td>
+        <td class="actions">
+          <a class="button" href="/assets/devices/{{ device.device_id }}/edit">編集</a>
+          <form method="post" action="/assets/devices/{{ device.device_id }}/delete" class="inline-form" onsubmit="return confirm('削除しますか？');">
+            <button class="danger" type="submit">削除</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

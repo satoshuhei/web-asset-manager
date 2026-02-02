@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% set title = "Configuration Edit" %}
+{% set active = "configurations" %}
+
+{% block content %}
+<article class="card">
+  <h2>構成編集</h2>
+  <form class="form" method="post" action="/configurations/{{ config.config_id }}/edit">
+    <div class="form-row">
+      <label>構成No</label>
+      <input value="{{ config.config_no }}" disabled />
+    </div>
+    <div class="form-row">
+      <label>名称 *</label>
+      <input name="name" required value="{{ config.name }}" />
+    </div>
+    <div class="form-row">
+      <label>備考</label>
+      <textarea name="note" rows="3">{{ config.note }}</textarea>
+    </div>
+    <div class="form-actions">
+      <button class="primary" type="submit">保存</button>
+      <a class="button" href="/configurations">戻る</a>
+    </div>
+  </form>
+</article>
+{% endblock %}
